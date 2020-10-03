@@ -132,7 +132,7 @@ def main(args):
 
   # Flickr album
   photoset = np.flickr_photosets_getWithName(args.album)
-  print(json.dumps(photoset, indent=2))
+  #print(json.dumps(photoset, indent=2))
   flickr_last_updated = datetime.fromtimestamp(int(photoset['date_update']))
   print(f'Flickr album updated: {flickr_last_updated}')
 
@@ -153,9 +153,12 @@ def main(args):
     }
       
     items['items'].append(item)
-  
+    break
+    
+  #{"items":[{"photoUrl":"https://live.staticflickr.com/65535/50412858601_fd67c354c2_o.jpg","thumbnailUrl":"https://live.staticflickr.com/65535/50412858601_0dec423930.jpg","orientation":1}]}
   #print(items) 
-  np.addPlayListPhotos(playlist['id'], items)
+  r = np.addPlayListPhotos(playlist['id'], items)
+  print(f'Posted: {r.status_code}')
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser('Nixplay / Flickr album sync')
