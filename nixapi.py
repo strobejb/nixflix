@@ -20,7 +20,10 @@ class NixPlay(object):
       'Sec-Fetch-Dest': 'empty',
       'Sec-Fetch-Mode': 'cors',
       'Sec-Fetch-Site': 'same-site',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36',
+      'Accept':  'application/json, text/plain, */*',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Content-Type' : 'application/json'
     }       
 
   def login(self, user, password):
@@ -102,16 +105,30 @@ class NixPlay(object):
 
   def get_api_v3(self, method, params={}):
     u = f'https://api.nixplay.com/v3/{method}'
-    defparams={}#**defparams,**params}
+    defparams={}
     #print(Fore.GREEN+Style.BRIGHT+'\n' + u + Style.RESET_ALL)
     r = self.session.get(u, headers = self.headers(), params={**defparams,**params})
     return json.loads(r.text)
 
-  def post_api_v3(self, method, params={}, data={}):
+  def post_api_v3(self, method, data={}, params={}):
     u = f'https://api.nixplay.com/v3/{method}'
-    print('\n'+u)
-    r = self.session.post(u, headers = self.headers(), params={**defparams,**params}, data=data)
-    return json.loads(r.text)    
+    defparams={}
+    
+    hdrs = self.headers()#{'Content-Type' : 'application/json' }
+    #**self.headers(), 
+
+    # preflight??? 
+    r = self.session.options(u, headers=hdrs)
+    print(r.status_code)
+    #r = self.session.options(u, headers = hdrs)
+    #print(r.status_code)
+    #https://api.nixplay.com/v3/playlists/3201700/items
+    r = self.session.post(u, headers = hdrs, data=json.dumps(data))  #params={**defparams,**params}, 
+    print(r.request.url)
+    print(r.request.headers)
+    print(r.request.body)
+    #print(r.status_code)
+    return r
 
   #
   # NixPlay API
