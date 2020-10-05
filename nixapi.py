@@ -12,7 +12,7 @@ class NixPlay(object):
 
   def headers(self):
     return { 
-      'X-CSRF-Token': self.crsftok,
+      'X-CSRFToken': self.csrftok,
       'X-Nixplay-Username': self.user, 
       'X-Requested-With': 'XMLHttpRequest',
       'Referer': 'https://app.nixplay.com/',
@@ -112,22 +112,20 @@ class NixPlay(object):
 
   def post_api_v3(self, method, data={}, params={}):
     u = f'https://api.nixplay.com/v3/{method}'
-    defparams={}
-    
-    hdrs = self.headers()#{'Content-Type' : 'application/json' }
-    #**self.headers(), 
+    defparams={}    
+    hdrs = self.headers()
 
-    # preflight??? 
-    r = self.session.options(u, headers=hdrs)
-    print(r.status_code)
-    #r = self.session.options(u, headers = hdrs)
-    #print(r.status_code)
-    #https://api.nixplay.com/v3/playlists/3201700/items
     r = self.session.post(u, headers = hdrs, data=json.dumps(data))  #params={**defparams,**params}, 
-    print(r.request.url)
-    print(r.request.headers)
-    print(r.request.body)
-    #print(r.status_code)
+    print(r.status_code)
+    return r
+
+  def delete_api_v3(self, method, params={}):
+    u = f'https://api.nixplay.com/v3/{method}'
+    defparams={}    
+    hdrs = self.headers()
+
+    r = self.session.post(u, headers = hdrs, params={**defparams,**params})
+    print(r.status_code)
     return r
 
   #
@@ -156,6 +154,14 @@ class NixPlay(object):
   def addPlayListPhotos(self, playlist_id, photos):
     return self.post_api_v3(f'playlists/{playlist_id}/items', photos)
 
+  def delPlayListPhoto(self, playlist_id, id):
+    #f'playlists/{playlist_id}/
+    params = { 'id': id, 'delPhoto': ''}
+    return self.delete_api_v3(f'playlists/{playlist_id}/items', params=params)
+    #ttps://api.nixplay.com/v3/playlists/3201700/items?id=1451955-sns-photo-f174a336da1add07f8bffde153d0cbee:08167853d4:3201700&delPhoto=
+
+  def delPlayList(self, playlist_id):
+    return self.delete_api_v3(f'playlists/{playlist_id}/items?delPhoto=')
   #
   # Social / Flickr API
   #

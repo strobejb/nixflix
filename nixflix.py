@@ -3,6 +3,7 @@ import json
 import jsons
 from datetime import datetime
 import dateutil.parser
+import pytz
 import os
 import sys
 
@@ -115,50 +116,62 @@ def demo(args):
   favs = np.flickr_favorites_getList(photoset_id)
   print(json.dumps(favs, indent=2))
 
-
-def main(args):
-  np = NixPlay()
-  np.login(args.username, args.password)
-
+def update_nixplay_playlist(np, np_playlist_name, flickr_album_name):
+ 
   # Nixplay playlist
   playlist = np.getPlayList(args.playlist)  
   if not playlist:
     print(f'Playlist not found: {args.playlist}')
     return 1
   #print(json.dumps(playlist, indent=2))
-
+  #utcfromtimestamp
   np_last_updated = dateutil.parser.isoparse(playlist['last_updated_date'])
+  
+  #np_last_updated = datetime.utcfromtimestamp(np_last_updated)#int(playlist['last_updated_date']))
+  #np_last_updated = utc.localize(np_last_updated)
   print(f'Nixplay last updated: {np_last_updated}')
 
   # Flickr album
   photoset = np.flickr_photosets_getWithName(args.album)
   #print(json.dumps(photoset, indent=2))
-  flickr_last_updated = datetime.fromtimestamp(int(photoset['date_update']))
+  flickr_last_updated = datetime.fromtimestamp(int(photoset['date_update']), pytz.timezone("UTC"))
+  #flickr_last_updated = utc.localize(flickr_last_updated)
   print(f'Flickr album updated: {flickr_last_updated}')
 
+  if np_last_updated < flickr_last_updated: 
 
-  # get list of flickr photots in album
-  photos = np.flickr_photosets_getPhotos(photoset['id'])
-  #print(json.dumps(photos, indent=2))
+    print('Updating!')
 
-  items = { "items": [] }
+    # get list of flickr photots in album
+    photos = np.flickr_photosets_getPhotos(photoset['id'])
+    #print(json.dumps(photos, indent=2))
 
-  for photo in photos['photoset']['photo']:
-    updated = datetime.fromtimestamp(int(photo["lastupdate"]))
-    
-    item = { 
-      "photoUrl":     photo["url_o"], 
-      "thumbnailUrl": photo["url_m"],
-      "orientation":  1
-    }
+    items = { "items": [] }
+    for photo in photos['photoset']['photo']:
+      updated = datetime.fromtimestamp(int(photo["lastupdate"]))
       
-    items['items'].append(item)
-    break
-    
-  #{"items":[{"photoUrl":"https://live.staticflickr.com/65535/50412858601_fd67c354c2_o.jpg","thumbnailUrl":"https://live.staticflickr.com/65535/50412858601_0dec423930.jpg","orientation":1}]}
-  #print(items) 
-  r = np.addPlayListPhotos(playlist['id'], items)
-  print(f'Posted: {r.status_code}')
+      item = { 
+        "photoUrl":     photo["url_o"], 
+        "thumbnailUrl": photo["url_m"],
+        "orientation":  1
+      }
+        
+      items['items'].append(item)
+      
+    r = np.addPlayListPhotos(playlist['id'], items)
+    print(f'Posted: {r.status_code}')
+
+def main(args):
+  np = NixPlay()
+  np.login(args.username, args.password)
+
+  while True:
+    update_nixplay_playlist(np, args.playlist, args.album)
+
+    if not args.poll:
+      break
+
+    sleep(60)
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser('Nixplay / Flickr album sync')
@@ -166,6 +179,7 @@ if __name__ == "__main__":
   parser.add_argument('--password', help='Nixplay password')
   parser.add_argument('--nixplay-list', dest = 'playlist', default='My Playlist')
   parser.add_argument('--flickr-album', dest = 'album',    default='Favs')
+  parser.add_argument('--poll', default = 0)
 
   args = parser.parse_args()
   if not args.username and 'NIXPLAY_USERNAME' in os.environ:
