@@ -116,7 +116,8 @@ class NixPlay(object):
     hdrs = self.headers()
 
     r = self.session.post(u, headers = hdrs, data=json.dumps(data))  #params={**defparams,**params}, 
-    print(r.status_code)
+    #data = dump.dump_all(r)
+    #print(data.decode('utf-8'))
     return r
 
   def delete_api_v3(self, method, params={}):
@@ -124,8 +125,7 @@ class NixPlay(object):
     defparams={}    
     hdrs = self.headers()
 
-    r = self.session.post(u, headers = hdrs, params={**defparams,**params})
-    print(r.status_code)
+    r = self.session.delete(u, headers = hdrs, params={**defparams,**params})
     return r
 
   #
@@ -137,6 +137,9 @@ class NixPlay(object):
 
   def getFrames(self):
     return self.get_api_v3('frames')
+
+  def getFrameSettings(self, frame_id):
+    return self.get_api_v3(f'frame/settings/?frame_pk={frame_id}')    
 
   def getPlayLists(self):
     return self.get_api_v3('playlists')
@@ -161,7 +164,20 @@ class NixPlay(object):
     #ttps://api.nixplay.com/v3/playlists/3201700/items?id=1451955-sns-photo-f174a336da1add07f8bffde153d0cbee:08167853d4:3201700&delPhoto=
 
   def delPlayList(self, playlist_id):
-    return self.delete_api_v3(f'playlists/{playlist_id}/items?delPhoto=')
+    return self.delete_api_v3(f'playlists/{playlist_id}/items')#?delPhoto=')
+
+  def updatePlaylist(self, frame_id, playlist_id=''):
+    # application/x-www-form-urlencoded;
+    data = {
+      'frame_pk': frame_id,
+      'slideshow_list': playlist_id,
+      'operation': 'update'
+    }
+    return self.post_api_v3(f'playlists/{playlist_id}/items')#?delPhoto=')
+
+
+  def updateActivities(self):
+    return self.post_api_v3(f'users/activities', data = {})
   #
   # Social / Flickr API
   #
@@ -169,12 +185,12 @@ class NixPlay(object):
   def flickr_people_getPhotos(self, page=1):
     return self.flickr_api('flickr.people.getPhotos', {'photoset_id': photoset_id, 'page': page, 'per_page':1, 'user_id':'me', 'extras':'url_m,url_o'})
    
-  def flickr_photosets_getPhotos(self, photoset_id,page=1):
-    return self.flickr_api('flickr.photosets.getPhotos', {'photoset_id': photoset_id, 'page': page, 'per_page':100, 'extras':'url_m,url_k,url_o,date_upload,last_update'})
+  def flickr_photosets_getPhotos(self, photoset_id, page=1, per_page=30):
+    return self.flickr_api('flickr.photosets.getPhotos', {'photoset_id': photoset_id, 'page': page, 'per_page':per_page, 'extras':'url_m,url_k,url_o,date_upload,last_update'})
 
-  def flickr_photosets_getList(self, page=1):
+  def flickr_photosets_getList(self, page=1, per_page=30):
     #primary_photo_extras=url_m,url_o
-    return self.flickr_api('flickr.photosets.getList', {'page': page, 'per_page': 100})
+    return self.flickr_api('flickr.photosets.getList', {'page': page, 'per_page': per_page})
 
   def flickr_photosets_getWithName(self, name):
     photosets = self.flickr_photosets_getList()
@@ -191,6 +207,6 @@ class NixPlay(object):
   def flickr_urls_getUserProfile(self):
     return self.flickr_api('flickr.urls.getUserProfile')
 
-  def flickr_favorites_getList(self, page=1):
+  def flickr_favorites_getList(self, page=1, per_page=30):
     #primary_photo_extras=url_m,url_o
-    return self.flickr_api('flickr.favorites.getList', {'page': page, 'per_page': 100})
+    return self.flickr_api('flickr.favorites.getList', {'page': page, 'per_page': per_page})
