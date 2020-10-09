@@ -7,7 +7,7 @@ import pytz
 import os
 import sys
 
-from nixapi import NixPlay
+from nixapi_mobile import NixPlay
 from colorama import Fore, Back, Style, init
 try:
     init()
@@ -101,6 +101,29 @@ def main(args):
   if args.status:
     status(np)
     return 0
+
+  frames = np.getFrames()  
+  print(json.dumps(frames, indent=2))
+
+  #sys.exit(0)
+
+  frame_id = frames[0]['id']
+
+  r = np.screenOff(frame_id)
+  print(json.dumps(r, indent=2))
+
+  r = np.screenOn(frame_id)
+  print(json.dumps(r, indent=2))
+
+  r = np.startSlideshow(frame_id)
+  print(json.dumps(r, indent=2))
+
+  #status(np)
+
+  r = np.getAppConfig()
+  print(json.dumps(r, indent=2))
+
+  #return 0
 
   while True:
     update_nixplay_playlist(np, args.playlist, args.album, args.force)

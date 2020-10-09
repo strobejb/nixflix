@@ -4,6 +4,9 @@ import json
 import jsons
 from datetime import datetime
 
+#NIXPLAY_API = 'api.nixplay.com'
+NIXPLAY_API = 'mobile-api.nixplay.com'
+
 class NixPlay(object):
   def __init__(self):
     self.crsftok = None
@@ -42,9 +45,9 @@ class NixPlay(object):
       'Sec-Fetch-Mode': 'cors',
       'Sec-Fetch-Site': 'same-site'
     }
-    r = self.session.post('https://api.nixplay.com/www-login/', headers=hdr,data=data)
-    #data = dump.dump_all(r)
-    #print(data.decode('utf-8'))
+    r = self.session.post(f'https://{NIXPLAY_API}/www-login/', headers=hdr,data=data)
+    data = dump.dump_all(r)
+    print(data.decode('utf-8'))
 
     j = json.loads(r.text)
     token = j['token']
@@ -63,7 +66,7 @@ class NixPlay(object):
       'Sec-Fetch-User': '?1',
       'Upgrade-Insecure-Requests': '1'
     }
-    r = self.session.post('https://api.nixplay.com/v2/www-login-redirect/', headers=hdr,data=data, allow_redirects=False)    
+    r = self.session.post(f'https://{NIXPLAY_API}/v2/www-login-redirect/', headers=hdr,data=data, allow_redirects=False)    
     #data = dump.dump_all(r)
     #print(data.decode('utf-8'))
 
@@ -78,7 +81,7 @@ class NixPlay(object):
 
 
   def flickr_api(self, method, params={}):
-    u = f'https://api.nixplay.com/v2/social_api/flickr/services/rest'
+    u = f'https://{NIXPLAY_API}/v2/social_api/flickr/services/rest'
     defparams = {
       'api_key':'3a95aeba90bc3698ba73fb076f7ed370',
       'auth_token':self.flickr_auth,
@@ -104,14 +107,14 @@ class NixPlay(object):
     return json.loads(r.text)
 
   def get_api_v3(self, method, params={}):
-    u = f'https://api.nixplay.com/v3/{method}'
+    u = f'https://{NIXPLAY_API}/v3/{method}'
     defparams={}
     #print(Fore.GREEN+Style.BRIGHT+'\n' + u + Style.RESET_ALL)
     r = self.session.get(u, headers = self.headers(), params={**defparams,**params})
     return json.loads(r.text)
 
   def post_api_v3(self, method, data={}, params={}):
-    u = f'https://api.nixplay.com/v3/{method}'
+    u = f'https://{NIXPLAY_API}/v3/{method}'
     defparams={}    
     hdrs = self.headers()
 
@@ -120,8 +123,15 @@ class NixPlay(object):
     #print(data.decode('utf-8'))
     return r
 
+  def post_api_v1(self, method, data={}, params={}):
+    u = f'https://{NIXPLAY_API}/v1/{method}'
+    r = self.session.post(u, headers = self.headers(), data=json.dumps(data))
+    data = dump.dump_all(r)
+    print(data.decode('utf-8'))
+    return r
+
   def delete_api_v3(self, method, params={}):
-    u = f'https://api.nixplay.com/v3/{method}'
+    u = f'https://{NIXPLAY_API}/v3/{method}'
     defparams={}    
     hdrs = self.headers()
 
@@ -161,7 +171,6 @@ class NixPlay(object):
     #f'playlists/{playlist_id}/
     params = { 'id': id, 'delPhoto': ''}
     return self.delete_api_v3(f'playlists/{playlist_id}/items', params=params)
-    #ttps://api.nixplay.com/v3/playlists/3201700/items?id=1451955-sns-photo-f174a336da1add07f8bffde153d0cbee:08167853d4:3201700&delPhoto=
 
   def delPlayList(self, playlist_id):
     return self.delete_api_v3(f'playlists/{playlist_id}/items')#?delPhoto=')
@@ -175,6 +184,22 @@ class NixPlay(object):
     }
     return self.post_api_v3(f'playlists/{playlist_id}/items')#?delPhoto=')
 
+
+  def frameControl(self, frame_id, command):
+    data = {
+      "category": "remoteControl",
+      "data": json.dumps(command)   # "{\"button\":\"slideshow\"}"
+    }
+    return self.post_api_v1(f'frames/{frame_id}/commands', data=data)
+
+  def startSlideshow(self, frame_id):
+    return self.frameControl(frame_id, {"button": "slideshow"})
+
+  def screenOn(self, frame_id):
+    return self.frameControl(frame_id, {"button": "screenOn"})    
+
+  def screenOff(self, frame_id):
+    return self.frameControl(frame_id, {"button": "screenOff"})        
 
   def updateActivities(self):
     return self.post_api_v3(f'users/activities', data = {})
