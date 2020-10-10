@@ -4,8 +4,7 @@ import json
 import jsons
 from datetime import datetime
 
-#NIXPLAY_API = 'api.nixplay.com'
-NIXPLAY_API = 'mobile-api.nixplay.com'
+NIXPLAY_API = 'api.nixplay.com'
 
 class NixPlay(object):
   def __init__(self):
@@ -46,8 +45,8 @@ class NixPlay(object):
       'Sec-Fetch-Site': 'same-site'
     }
     r = self.session.post(f'https://{NIXPLAY_API}/www-login/', headers=hdr,data=data)
-    data = dump.dump_all(r)
-    print(data.decode('utf-8'))
+    #data = dump.dump_all(r)
+    #print(data.decode('utf-8'))
 
     j = json.loads(r.text)
     token = j['token']
@@ -96,15 +95,21 @@ class NixPlay(object):
     #print(Fore.GREEN+Style.BRIGHT+f'\n{u} <{method}> {json.dumps(params)}'+Style.RESET_ALL)
     #print(self.headers())
 
-    r = self.session.get(u, headers = self.headers(), params={**defparams,**params})#,cookies=self.cookies)
-    #print(r.request.url)
-    #print(r.request.headers)
-    #print(r.text)
-    #print(r.request.url)
+    r = self.session.get(u, headers = self.headers(), params={**defparams,**params})
+
     #data = dump.dump_all(r)
     #print(data.decode('utf-8'))
-    #?api_key={self.apikey}&auth_token={self.auth_token}&format=json&method={method}&nojsoncallback=1'
-    return json.loads(r.text)
+
+    j = json.loads(r.text)
+
+    if 'stat' in j and j['stat'] == 'ok':
+      return j
+
+    if 'stat' in j and j['stat'] == 'fail':
+      print(j['message'])
+      return None
+
+    return None 
 
   def get_api_v3(self, method, params={}):
     u = f'https://{NIXPLAY_API}/v3/{method}'

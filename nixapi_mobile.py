@@ -4,13 +4,10 @@ import json
 import jsons
 from datetime import datetime
 
-#NIXPLAY_API = 'api.nixplay.com'
 NIXPLAY_API = 'mobile-api.nixplay.com'
 
-class NixPlay(object):
+class NixPlayMobile(object):
   def __init__(self):
-    self.crsftok   = None
-    self.cookies   = None
     self.authtoken = None
     self.session   = requests.Session()
 
@@ -53,35 +50,6 @@ class NixPlay(object):
     self.flickr_auth = appconf['flickr_api_key']
     return j
 
-
-  def flickr_api(self, method, params={}):
-    u = f'https://{NIXPLAY_API}/v1/social_api/flickr/services/rest'
-    defparams = {
-      'api_key':'3a95aeba90bc3698ba73fb076f7ed370',
-      'auth_token':self.flickr_auth,
-      'format': 'json',
-      'method':method,
-      'nojsoncallback':1,
-      #'page':1,
-      'per_page':100,
-      #'primary_photo_extras':''
-      #'url_m,url_o
-    }
-    #print(Fore.GREEN+Style.BRIGHT+f'\n{u} <{method}> {json.dumps(params)}'+Style.RESET_ALL)
-    #print(self.headers())
-
-    r = self.session.get(u, headers = self.headers(), params={**defparams,**params})#,cookies=self.cookies)
-    data = dump.dump_all(r)
-    print(data.decode('utf-8'))
-
-    #print(r.request.url)
-    #print(r.request.headers)
-    #print(r.text)
-    #print(r.request.url)
-    #data = dump.dump_all(r)
-    #print(data.decode('utf-8'))
-    #?api_key={self.apikey}&auth_token={self.auth_token}&format=json&method={method}&nojsoncallback=1'
-    return json.loads(r.text)
 
   def api(self, request_method, api_version, api_method, params={}, data=None):
     url = f'https://{NIXPLAY_API}/{api_version}/{api_method}'
@@ -193,37 +161,3 @@ class NixPlay(object):
   def updateActivities(self):
     return self.post_api_v3(f'users/activities', data = {})
  
-
-  #
-  # Social / Flickr API
-  #
-
-  def flickr_people_getPhotos(self, page=1):
-    return self.flickr_api('flickr.people.getPhotos', {'photoset_id': photoset_id, 'page': page, 'per_page':1, 'user_id':'me', 'extras':'url_m,url_o'})
-   
-  def flickr_photosets_getPhotos(self, photoset_id, page=1, per_page=30):
-    return self.flickr_api('flickr.photosets.getPhotos', {'photoset_id': photoset_id, 'page': page, 'per_page':per_page, 'extras':'url_m,url_k,url_o,date_upload,last_update'})
-
-  def flickr_photosets_getList(self, page=1, per_page=30):
-    #primary_photo_extras=url_m,url_o
-    return self.flickr_api('flickr.photosets.getList', {'page': page, 'per_page': per_page})
-
-  def flickr_photosets_getWithName(self, name):
-    photosets = self.flickr_photosets_getList()
-    
-    for photoset in photosets['photosets']['photoset']:
-      #print(photoset['id'], photoset['title']['_content'])
-      if photoset['title']['_content'] == name:
-        return photoset
-        #photoset_id = photoset['id']   
-
-  def flickr_photosets_getInfo(self, photoset_id):
-    return self.flickr_api('flickr.photosets.getInfo', {'photoset_id': photoset_id})
-
-  def flickr_urls_getUserProfile(self):
-    return self.flickr_api('flickr.urls.getUserProfile')
-
-  def flickr_favorites_getList(self, page=1, per_page=30):
-    #primary_photo_extras=url_m,url_o
-    return self.flickr_api('flickr.favorites.getList', {'page': page, 'per_page': per_page})
-

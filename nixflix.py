@@ -7,7 +7,8 @@ import pytz
 import os
 import sys
 
-from nixapi_mobile import NixPlay
+from nixapi_web import NixPlay
+from nixapi_mobile import NixPlayMobile
 from colorama import Fore, Back, Style, init
 try:
     init()
@@ -51,7 +52,7 @@ def update_nixplay_playlist(np, np_playlist_name, flickr_album_name, force):
     while True:
       # get list of flickr photots in album
       photos = np.flickr_photosets_getPhotos(photoset['id'], page)
-      #print(json.dumps(photos, indent=2))
+      print(json.dumps(photos, indent=2))
 
       for photo in photos['photoset']['photo']:
         updated = datetime.fromtimestamp(int(photo["lastupdate"]))
@@ -94,14 +95,8 @@ def status(np):
     ls = datetime.fromtimestamp(int(frame['lastConnected'])/100)
     print(f'lastSeen: {ls}')
 
-def main(args):
-  np = NixPlay()
-  np.login(args.username, args.password)
 
-  if args.status:
-    status(np)
-    return 0
-
+def control_nixplay_frame(np):
   frames = np.getFrames()  
   print(json.dumps(frames, indent=2))
 
@@ -125,8 +120,26 @@ def main(args):
 
   #return 0
 
+def main(args):
+
+  # login to Web api
+  np = NixPlay()
+  np.login(args.username, args.password)
+
+  # login to Mobile api
+  npm = NixPlayMobile()
+  npm.login(args.username, args.password)
+
+
+  if args.status:
+    status(np)
+    return 0
+
+
   while True:
     update_nixplay_playlist(np, args.playlist, args.album, args.force)
+
+    control_nixplay_frame(npm)
 
     if not args.poll:
       break
