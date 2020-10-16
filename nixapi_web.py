@@ -153,6 +153,12 @@ class NixPlay(object):
   def getFrames(self):
     return self.get_api_v3('frames')
 
+  def getFrame(self, name):
+    frames = self.getFrames()
+    for frame in frames:
+      if frame['name'] == name:
+        return frame
+
   def getFrameSettings(self, frame_id):
     return self.get_api_v3(f'frame/settings/?frame_pk={frame_id}')    
 
@@ -172,8 +178,8 @@ class NixPlay(object):
   def addPlayListPhotos(self, playlist_id, photos):
     return self.post_api_v3(f'playlists/{playlist_id}/items', photos)
 
-  def delPlayListPhoto(self, playlist_id, id):
-    #f'playlists/{playlist_id}/
+  # photos can be a list or a single item
+  def delPlayListPhotos(self, playlist_id, photos):
     params = { 'id': id, 'delPhoto': ''}
     return self.delete_api_v3(f'playlists/{playlist_id}/items', params=params)
 
@@ -189,29 +195,12 @@ class NixPlay(object):
     }
     return self.post_api_v3(f'playlists/{playlist_id}/items')#?delPhoto=')
 
-
-  def frameControl(self, frame_id, command):
-    data = {
-      "category": "remoteControl",
-      "data": json.dumps(command)   # "{\"button\":\"slideshow\"}"
-    }
-    return self.post_api_v1(f'frames/{frame_id}/commands', data=data)
-
-  def startSlideshow(self, frame_id):
-    return self.frameControl(frame_id, {"button": "slideshow"})
-
-  def screenOn(self, frame_id):
-    return self.frameControl(frame_id, {"button": "screenOn"})    
-
-  def screenOff(self, frame_id):
-    return self.frameControl(frame_id, {"button": "screenOff"})        
-
   def updateActivities(self):
     return self.post_api_v3(f'users/activities', data = {})
+
   #
   # Social / Flickr API
   #
-
   def flickr_people_getPhotos(self, page=1):
     return self.flickr_api('flickr.people.getPhotos', {'photoset_id': photoset_id, 'page': page, 'per_page':1, 'user_id':'me', 'extras':'url_m,url_o'})
    

@@ -3,6 +3,7 @@ import json
 import jsons
 from datetime import datetime
 import dateutil.parser
+import time
 import pytz
 import os
 import sys
@@ -15,7 +16,7 @@ try:
 except:
     print('No colour support')
 
-def update_nixplay_playlist(np, np_playlist_name, flickr_album_name, force):
+def update_nixplay_playlist_from_flickr_album(np, np_playlist_name, flickr_album_name, force):
  
   # Nixplay playlist
   playlist = np.getPlayList(args.playlist)  
@@ -46,14 +47,16 @@ def update_nixplay_playlist(np, np_playlist_name, flickr_album_name, force):
   if np_last_updated < flickr_last_updated or force: 
 
     print('Updating!')
-
-    items = { "items": [] }
+    r = np.delPlayList(playlist['id'])
     page = 1
-    while True:
-      # get list of flickr photots in album
-      photos = np.flickr_photosets_getPhotos(photoset['id'], page)
-      print(json.dumps(photos, indent=2))
 
+    while True:
+
+      # get list of flickr photots in album
+      photos = np.flickr_photosets_getPhotos(photoset['id'], page, 30)
+      #print(json.dumps(photos, indent=2))
+
+      items = { "items": [] }
       for photo in photos['photoset']['photo']:
         updated = datetime.fromtimestamp(int(photo["lastupdate"]))
         orientation = 1 if photo["width_o"] < photo["height_o"] else 0
@@ -64,18 +67,21 @@ def update_nixplay_playlist(np, np_playlist_name, flickr_album_name, force):
           "orientation":  orientation
         }
         
+        #print(items)
         items['items'].append(item)
 
       page = page + 1
       if page > photos['photoset']['pages']:
-        break
-      
-    #print(items)
-    r = np.delPlayList(playlist['id'])
-    r = np.addPlayListPhotos(playlist['id'], items)
-    print(f'Posted {len(items["items"])} photos: {r.status_code}')
+        break      
+    
+      r = np.addPlayListPhotos(playlist['id'], items)
+      print(f'Posted {len(items["items"])} photos: {r.status_code}')
 
-    np.updateActivities()
+    # give the frame time to update
+    #time.sleep(10)
+    print('done')
+
+  print('????')
 
 def status(np):
   frames = np.getFrames()
@@ -96,29 +102,33 @@ def status(np):
     print(f'lastSeen: {ls}')
 
 
-def control_nixplay_frame(np):
-  frames = np.getFrames()  
-  print(json.dumps(frames, indent=2))
+def update_nixplay_frame_with_playlist(npm, frame_name, playlist_name, np):
+  frame = npm.getFrame(frame_name)  
+  print(json.dumps(frame, indent=2))
 
-  #sys.exit(0)
+  #state = npm.getFrameState(frame['frameId'])
+  #print(json.dumps(state, indent=2))
 
-  frame_id = frames[0]['id']
+  playlist = npm.getPlayList(playlist_name)
+  print(json.dumps(playlist, indent=2))
 
-  r = np.screenOff(frame_id)
-  print(json.dumps(r, indent=2))
+  # if the frame is playing the specified playlist, then start it off again
+  for pl in frame['playlists']:
+    if pl['id'] == playlist['id']:
+      print('starting playlist')
+      r = npm.startPlaylist(frame['id'], playlist['id'])
+      print(json.dumps(r, indent=2))
 
-  r = np.screenOn(frame_id)
-  print(json.dumps(r, indent=2))
 
-  r = np.startSlideshow(frame_id)
-  print(json.dumps(r, indent=2))
+  #slides = np.getPlayListSlides(playlist['id'])
+  #print(json.dumps(slides, indent=2))
 
-  #status(np)
+def feck(np):
+  playlist = np.getPlayList(args.playlist)
+  print(json.dumps(playlist, indent=2))
 
-  r = np.getAppConfig()
-  print(json.dumps(r, indent=2))
-
-  #return 0
+  slides = np.getPlayListSlides(playlist['id'])
+  print(json.dumps(slides, indent=2))
 
 def main(args):
 
@@ -130,16 +140,23 @@ def main(args):
   npm = NixPlayMobile()
   npm.login(args.username, args.password)
 
-
   if args.status:
     status(np)
     return 0
 
+  r = feck(npm)
+  return 0
+  if args.start:
+    update_nixplay_frame_with_playlist(npm, args.frame, args.playlist, np)
+    return 0
+  
+  #return 0
 
   while True:
-    update_nixplay_playlist(np, args.playlist, args.album, args.force)
 
-    control_nixplay_frame(npm)
+    update_nixplay_playlist_from_flickr_album(np, args.playlist, args.album, args.force)
+
+    update_nixplay_frame_with_playlist(npm, args.frame, args.playlist, np)
 
     if not args.poll:
       break
@@ -150,11 +167,13 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser('Nixplay / Flickr album sync')
   parser.add_argument('--username', help='Nixplay username')
   parser.add_argument('--password', help='Nixplay password')
+  parser.add_argument('--frame', dest = 'frame', default='Westcott')
   parser.add_argument('--nixplay-list', dest = 'playlist', default='My Playlist')
-  parser.add_argument('--flickr-album', dest = 'album',    default='Favs')
+  parser.add_argument('--flickr-album', dest = 'album', default='Favs')
   parser.add_argument('--poll', default = 0)
   parser.add_argument('--force', default=True)
   parser.add_argument('--status', action='store_true', default=False)
+  parser.add_argument('--start', action='store_true', default=False)
 
   args = parser.parse_args()
   if not args.username and 'NIXPLAY_USERNAME' in os.environ:

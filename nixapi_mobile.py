@@ -72,6 +72,9 @@ class NixPlayMobile(object):
 
   def post_api_v1(self, method, params={}, data={}):
     r = self.api('POST', 'v1', method, params, data)
+    #data = dump.dump_all(r)
+    #print(data.decode('utf-8'))
+
     return json.loads(r.text)
 
   def post_api_v3(self, method, data={}, params={}):
@@ -92,21 +95,28 @@ class NixPlayMobile(object):
   def getFrames(self):
     return self.get_api_v1('frames')['frames']
 
-
+  def getFrame(self, name):
+    frames = self.getFrames()
+    for frame in frames:
+      if frame['name'] == name:
+        return frame
 
   # mobile-specific APIs
   def getAppConfig(self):
     r = self.api('POST', 'd/v2', 'app/config/')
     return json.loads(r.text)
 
-  def getFramesStatus(self, frame_id):
+  def getFramesStatus(self):
     return self.get_api_v1('frames/status')['frames']
 
   def getFrameSettings(self, frame_id):
     return self.get_api_v1(f'frames/{frame_id}/settings')    
 
-  def getFrameSettingsx(self, frame_id):
-    return self.get_api_v1(f'frame/settings/?frame_pk={frame_id}')    
+  #def getFrameSettingsx(self, frame_id):
+  #  return self.get_api_v1(f'frame/settings/?frame_pk={frame_id}')    
+
+  def getFrameState(self, frame_internal_id):
+    return self.get_api_v1(f'frames/{frame_internal_id}/state')
 
   def getPlayLists(self):
     return self.get_api_v3('playlists')
@@ -118,19 +128,24 @@ class NixPlayMobile(object):
       if p['name'] == name:
         return p
 
-  def getPlayListSlides(self, playlist_id, offset=0, size=100):
-    return self.get_api_v3(f'playlists/{playlist_id}/slides', {'size': size, 'offset': offset})
+  def getPlayListSlides(self, playlist_id, offset=0, size=50):
+    params = {'offset': offset, 'size': size}
+    return self.get_api_v1(f'playlists/{playlist_id}', params)
+
+  def getPlayListSocialData(self, playlist_id):
+    return self.get_api_v3(f'social-data/playlist/{playlist_id}')    
 
   def addPlayListPhotos(self, playlist_id, photos):
     return self.post_api_v3(f'playlists/{playlist_id}/items', photos)
 
-  def delPlayListPhoto(self, playlist_id, id):
+  # photo_ids can be a list, or a single item
+  def delPlayListPhotos(self, playlist_id, photo_ids):
     #f'playlists/{playlist_id}/
-    params = { 'id': id, 'delPhoto': ''}
-    return self.delete_api_v3(f'playlists/{playlist_id}/items', params=params)
+    params = { 'itemIds[]': photo_ids, 'delPhoto': ''}
+    return self.delete_api_v1(f'playlists/{playlist_id}/items', params=params)
 
   def delPlayList(self, playlist_id):
-    return self.delete_api_v3(f'playlists/{playlist_id}/items')#?delPhoto=')
+    return self.delete_api_v1(f'playlists/{playlist_id}/items')#?delPhoto=')
 
   def updatePlaylist(self, frame_id, playlist_id=''):
     # application/x-www-form-urlencoded;
@@ -142,21 +157,24 @@ class NixPlayMobile(object):
     return self.post_api_v3(f'playlists/{playlist_id}/items')#?delPhoto=')
 
 
-  def frameControl(self, frame_id, command):
+  def frameControl(self, frame_id, category, command):
     data = {
-      "category": "remoteControl",
+      "category": category,
       "data": json.dumps(command)   # "{\"button\":\"slideshow\"}"
     }
     return self.post_api_v1(f'frames/{frame_id}/commands', data=data)
 
-  def startSlideshow(self, frame_id):
-    return self.frameControl(frame_id, {"button": "slideshow"})
+  def startPlaylist(self, frame_id, playlist_id):
+    return self.frameControl(frame_id, 'carousel', {"source": "gallery", "playlistId": playlist_id})
+
+  def toggleSlideshow(self, frame_id):
+    return self.frameControl(frame_id, 'remoteControl', {"button": "slideshow"})
 
   def screenOn(self, frame_id):
-    return self.frameControl(frame_id, {"button": "screenOn"})    
+    return self.frameControl(frame_id, 'remoteControl', {"button": "screenOn"})    
 
   def screenOff(self, frame_id):
-    return self.frameControl(frame_id, {"button": "screenOff"})        
+    return self.frameControl(frame_id, 'remoteControl', {"button": "screenOff"})        
 
   def updateActivities(self):
     return self.post_api_v3(f'users/activities', data = {})
