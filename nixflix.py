@@ -16,15 +16,31 @@ try:
 except:
     print('No colour support')
 
+def format_flickr_photos_for_nixplay(photos):
+  items = { "items": [] }
+  for photo in photos['photoset']['photo']:
+    updated = datetime.fromtimestamp(int(photo["lastupdate"]))
+    orientation = 1 if photo["width_o"] < photo["height_o"] else 0
+  
+    items['items'].append({ 
+      "photoUrl":     photo["url_k"] if "url_k" in photo else photo["url_o"], 
+      "thumbnailUrl": photo["url_m"],
+      "orientation":  orientation
+    })
+
+  return items
+
 def update_nixplay_playlist_from_flickr_album(np, np_playlist_name, flickr_album_name, force):
  
   # Nixplay playlist
-  playlist = np.getPlayList(args.playlist)  
+  playlist = np.getPlayList(np_playlist_name)  
   if not playlist:
-    print(f'Playlist not found: {args.playlist}')
+    print(f'Playlist not found: {np_playlist_name}')
     return 1
   #print(json.dumps(playlist, indent=2))
   #utcfromtimestamp
+
+  np_picture_count = playlist['picture_count']
   np_last_updated = dateutil.parser.isoparse(playlist['last_updated_date'])
   
   #np_last_updated = datetime.utcfromtimestamp(np_last_updated)#int(playlist['last_updated_date']))
@@ -33,7 +49,7 @@ def update_nixplay_playlist_from_flickr_album(np, np_playlist_name, flickr_album
 
 
   # Flickr album
-  photoset = np.flickr_photosets_getWithName(args.album)
+  photoset = np.flickr_photosets_getWithName(flickr_album_name)
   #print(json.dumps(photoset, indent=2))
 
   # Album info
@@ -50,32 +66,25 @@ def update_nixplay_playlist_from_flickr_album(np, np_playlist_name, flickr_album
     r = np.delPlayList(playlist['id'])
     page = 1
 
-    while True:
+    for page in range(1, photos['photoset']['pages']):
 
       # get list of flickr photots in album
       photos = np.flickr_photosets_getPhotos(photoset['id'], page, 30)
       #print(json.dumps(photos, indent=2))
 
-      items = { "items": [] }
-      for photo in photos['photoset']['photo']:
-        updated = datetime.fromtimestamp(int(photo["lastupdate"]))
-        orientation = 1 if photo["width_o"] < photo["height_o"] else 0
-      
-        item = { 
-          "photoUrl":     photo["url_k"] if "url_k" in photo else photo["url_o"], 
-          "thumbnailUrl": photo["url_m"],
-          "orientation":  orientation
-        }
-        
-        #print(items)
-        items['items'].append(item)
+      items = format_flickr_photos_for_nixplay(photos)
 
       page = page + 1
-      if page > photos['photoset']['pages']:
+      if page > photos9['photoset']['pages']:
         break      
     
       r = np.addPlayListPhotos(playlist['id'], items)
       print(f'Posted {len(items["items"])} photos: {r.status_code}')
+
+      if np_picture_count > 0:
+        count = min(np_picture_count, 30)
+        np.delPlayListPhotoRange(playlist['id'], 0, count)
+        np_picture_count -= count
 
     # give the frame time to update
     #time.sleep(10)
@@ -144,7 +153,9 @@ def main(args):
     status(np)
     return 0
 
-  r = feck(npm)
+  photoset = np.flickr_photosets_getWithName(args.album)
+  print(json.dumps(photoset, indent=2))
+  #r = feck(npm)
   return 0
   if args.start:
     update_nixplay_frame_with_playlist(npm, args.frame, args.playlist, np)

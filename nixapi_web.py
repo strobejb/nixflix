@@ -183,6 +183,12 @@ class NixPlay(object):
     params = { 'id': id, 'delPhoto': ''}
     return self.delete_api_v3(f'playlists/{playlist_id}/items', params=params)
 
+  # photos can be a list or a single item
+  def delPlayListPhotoRange(self, playlist_id, offset, count):
+    photos = self.getPlayListSlides(playlist_id, offset, count)
+    ids = [p['playlistItemId'] for p in photos]
+    return self.delPlayListPhotos(playlist_id, ids)
+
   def delPlayList(self, playlist_id):
     return self.delete_api_v3(f'playlists/{playlist_id}/items')#?delPhoto=')
 
