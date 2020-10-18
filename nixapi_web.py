@@ -131,15 +131,14 @@ class NixPlay(object):
   def post_api_v1(self, method, data={}, params={}):
     u = f'https://{NIXPLAY_API}/v1/{method}'
     r = self.session.post(u, headers = self.headers(), data=json.dumps(data))
-    data = dump.dump_all(r)
-    print(data.decode('utf-8'))
+    #data = dump.dump_all(r)
+    #print(data.decode('utf-8'))
     return r
 
   def delete_api_v3(self, method, params={}):
     u = f'https://{NIXPLAY_API}/v3/{method}'
     defparams={}    
     hdrs = self.headers()
-
     r = self.session.delete(u, headers = hdrs, params={**defparams,**params})
     return r
 
@@ -180,14 +179,13 @@ class NixPlay(object):
 
   # photos can be a list or a single item
   def delPlayListPhotos(self, playlist_id, photos):
-    params = { 'id': id, 'delPhoto': ''}
+    params = { 'id': photos, 'delPhoto': ''}
     return self.delete_api_v3(f'playlists/{playlist_id}/items', params=params)
 
-  # photos can be a list or a single item
-  def delPlayListPhotoRange(self, playlist_id, offset, count):
-    photos = self.getPlayListSlides(playlist_id, offset, count)
-    ids = [p['playlistItemId'] for p in photos]
-    return self.delPlayListPhotos(playlist_id, ids)
+  #def delPlayListPhotoRange(self, playlist_id, offset, count):
+  #  photos = self.getPlayListSlides(playlist_id, offset, count)
+  #  ids = [p['playlistItemId'] for p in photos]
+  #  return self.delPlayListPhotos(playlist_id, ids)
 
   def delPlayList(self, playlist_id):
     return self.delete_api_v3(f'playlists/{playlist_id}/items')#?delPhoto=')

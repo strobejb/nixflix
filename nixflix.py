@@ -30,14 +30,13 @@ def format_flickr_photos_for_nixplay(photos):
 
   return items
 
-def delete_photos(np, playlist, count):
+def delete_playlist_photo_range(np, playlist_id, offset, count):
+  while offset < count:
+    photos = np.getPlayListSlides(playlist_id, offset, min(count, 30))    
+    ids = [p['playlistItemId'] for p in photos['slides']]
 
-  np_picture_count = playlist['picture_count']
-  
-  if np_picture_count > 0:
-    count = min(np_picture_count, 30)
-    np.delPlayListPhotoRange(playlist['id'], 0, count)
-    plnp_picture_count -= count
+    r = np.delPlayListPhotos(playlist_id, ids)
+    offset += min(count, 30)
 
 def update_nixplay_playlist_from_flickr_album(np, np_playlist_name, flickr_album_name, force):
  
@@ -72,25 +71,25 @@ def update_nixplay_playlist_from_flickr_album(np, np_playlist_name, flickr_album
   if np_last_updated < flickr_last_updated or force: 
 
     print('Updating!')
-    #r = np.delPlayList(playlist['id'])
-    #page = 1
 
-    # grab photos 1 page at a time
+    # delete all but 1 image from the nixplay playlist
+    if np_picture_count > 1:
+      delete_playlist_photo_range(np, playlist['id'], 0, np_picture_count - 1)
+      np_picture_count = 1
+
+    # process photos 1 page at a time
     for page in range(1, -(-photoset['count_photos']//30)):
-
       photos = np.flickr_photosets_getPhotos(photoset['id'], page, 30)
       items = format_flickr_photos_for_nixplay(photos)
 
       r = np.addPlayListPhotos(playlist['id'], items)
       print(f'Posted {len(items["items"])} photos: {r.status_code}')
 
-      delete_photos(np, playlist, 30)
+    # delete the remaining image
+    delete_playlist_photo_range(np, playlist['id'], 0, np_picture_count)
 
-    # give the frame time to update
-    #time.sleep(10)
     print('done')
 
-  print('????')
 
 def status(np):
   frames = np.getFrames()
@@ -111,33 +110,19 @@ def status(np):
     print(f'lastSeen: {ls}')
 
 
+#
+# if the frame is playing the specified playlist, then start it off again
+#
 def update_nixplay_frame_with_playlist(npm, frame_name, playlist_name, np):
   frame = npm.getFrame(frame_name)  
-  print(json.dumps(frame, indent=2))
-
-  #state = npm.getFrameState(frame['frameId'])
-  #print(json.dumps(state, indent=2))
-
   playlist = npm.getPlayList(playlist_name)
-  print(json.dumps(playlist, indent=2))
 
-  # if the frame is playing the specified playlist, then start it off again
   for pl in frame['playlists']:
     if pl['id'] == playlist['id']:
       print('starting playlist')
       r = npm.startPlaylist(frame['id'], playlist['id'])
       print(json.dumps(r, indent=2))
 
-
-  #slides = np.getPlayListSlides(playlist['id'])
-  #print(json.dumps(slides, indent=2))
-
-def feck(np):
-  playlist = np.getPlayList(args.playlist)
-  print(json.dumps(playlist, indent=2))
-
-  slides = np.getPlayListSlides(playlist['id'])
-  print(json.dumps(slides, indent=2))
 
 def main(args):
 
@@ -153,21 +138,14 @@ def main(args):
     status(np)
     return 0
 
-  photoset = np.flickr_photosets_getWithName(args.album)
-  print(json.dumps(photoset, indent=2))
-  #r = feck(npm)
-  return 0
   if args.start:
     update_nixplay_frame_with_playlist(npm, args.frame, args.playlist, np)
     return 0
-  
-  #return 0
 
   while True:
 
     update_nixplay_playlist_from_flickr_album(np, args.playlist, args.album, args.force)
-
-    update_nixplay_frame_with_playlist(npm, args.frame, args.playlist, np)
+    #update_nixplay_frame_with_playlist(npm, args.frame, args.playlist, np)
 
     if not args.poll:
       break
