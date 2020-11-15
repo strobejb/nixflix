@@ -15,3 +15,5 @@ sudo chmod 644 $SERVICE
 
 systemctl enable nixflix.service
 systemctl status nixflix.service
+
+journalctl -f -u nixflix.service

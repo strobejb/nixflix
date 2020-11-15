@@ -3,7 +3,7 @@ Description=Nixplay Flickr syncing service
 After=multi-user.target
 
 [Service]
-Type=Simple
+#Type=Simple
 ExecStart=/usr/bin/python3 nixflix.py
 Restart=always
 
