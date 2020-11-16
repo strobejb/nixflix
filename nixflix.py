@@ -55,7 +55,7 @@ def update_nixplay_playlist_from_flickr_album(np, np_playlist_name, flickr_album
   
   #np_last_updated = datetime.utcfromtimestamp(np_last_updated)#int(playlist['last_updated_date']))
   #np_last_updated = utc.localize(np_last_updated)
-  print(f'Nixplay last updated: {np_last_updated}')
+  print(f'Nixplay ({np_playlist_name}) - {np_picture_count} photos - updated: {np_last_updated}')
 
 
   # Flickr album
@@ -68,7 +68,7 @@ def update_nixplay_playlist_from_flickr_album(np, np_playlist_name, flickr_album
 
   flickr_last_updated = datetime.fromtimestamp(int(photoset['date_update']), pytz.timezone("UTC"))
   #flickr_last_updated = utc.localize(flickr_last_updated)
-  print(f'Flickr album updated: {flickr_last_updated}')
+  print(f'Flickr ({flickr_album_name}) - {photoset["count_photos"]} photos - updated: {flickr_last_updated}')
 
   if np_last_updated < flickr_last_updated or force: 
 
@@ -83,10 +83,11 @@ def update_nixplay_playlist_from_flickr_album(np, np_playlist_name, flickr_album
       np_picture_count = 1
 
     # process photos 1 page at a time
-    for page in range(1, -(-photoset['count_photos']//30)):
-      photos = np.flickr_photosets_getPhotos(photoset['id'], page, 30)
+    for page in range(0, -(-photoset['count_photos']//30)):
+      photos = np.flickr_photosets_getPhotos(photoset['id'], page+1, 30)
       items = format_flickr_photos_for_nixplay(photos)
 
+      items["items"].reverse()
       r = np.addPlayListPhotos(playlist['id'], items)
       code=requests.status_codes._codes[r.status_code][0]
       print(f'Posted {len(items["items"])} photos ({code})')
