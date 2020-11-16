@@ -11,15 +11,15 @@ Nixplay credentials must be configured for the systemd service (see below)
 
 # Credentials
 
-Set NixPlay credentials as environment variables, or specify --username and --password at the commandline
+### Set NixPlay credentials as environment variables, or specify `--username` and `--password` at the commandline
 * NIXPLAY_USERNAME=username
 * NIXPLAY_PASSWORD=password
 
-Set NixPlay credentials for systemd service
+### Set NixPlay credentials for systemd service
 
 `systemctl edit nixflix.service`
 
-Enter the following for override.conf
+Enter the following for `/etc/systemd/system/nixflix.service.d/override.conf`
 ```
 [Service]
 Environment="NIXPLAY_USERNAME=<username here>"

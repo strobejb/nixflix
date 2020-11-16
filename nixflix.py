@@ -157,7 +157,7 @@ def main(args):
     if not args.poll:
       break
 
-    sleep(60)
+    time.sleep(args.poll)
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser('Nixplay / Flickr album sync')
@@ -166,10 +166,10 @@ if __name__ == "__main__":
   parser.add_argument('--frame', dest = 'frame', default='Westcott')
   parser.add_argument('--nixplay-list', dest = 'playlist', default='My Playlist')
   parser.add_argument('--flickr-album', dest = 'album', default='Favs')
-  parser.add_argument('--poll', default = 0)
-  parser.add_argument('--force', action='store_true', default=False)
+  parser.add_argument('--poll', type=int, default = 0)
+  parser.add_argument('--force',  action='store_true', default=False)
   parser.add_argument('--status', action='store_true', default=False)
-  parser.add_argument('--start', action='store_true', default=False)
+  parser.add_argument('--start',  action='store_true', default=False)
 
   args = parser.parse_args()
   if not args.username and 'NIXPLAY_USERNAME' in os.environ:
