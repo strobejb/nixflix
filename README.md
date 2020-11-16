@@ -9,13 +9,21 @@ Requires Python3.6+
 
 Nixplay credentials must be configured for the systemd service (see below)
 
+### Development
+
+When editing the nixplay service, or doing development, it is necessary to reload the systemd service file:
+```
+systemctl daemon-reload
+systemctl restart nixflix
+```
+
 # Credentials
 
-### Set NixPlay credentials as environment variables, or specify `--username` and `--password` at the commandline
+Set NixPlay credentials as environment variables, or specify `--username` and `--password` at the commandline
 * NIXPLAY_USERNAME=username
 * NIXPLAY_PASSWORD=password
 
-### Set NixPlay credentials for systemd service
+Set NixPlay credentials for systemd service
 
 `systemctl edit nixflix.service`
 
@@ -26,6 +34,7 @@ Environment="NIXPLAY_USERNAME=<username here>"
 Environment="NIXPLAY_PASSWORD=<password here>"
 ```
 
+Restart the service using `systemctl restart nixflix`
 
 # Usage
 

@@ -3,9 +3,9 @@ Description=Nixplay Flickr syncing service
 After=multi-user.target
 
 [Service]
-#Type=Simple
-ExecStart=/usr/bin/python3 nixflix.py
+Type=simple
+ExecStart=/usr/bin/python3 nixflix.py --poll 900
 Restart=always
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=multi-user.targetps
