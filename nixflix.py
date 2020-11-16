@@ -7,10 +7,12 @@ import time
 import pytz
 import os
 import sys
+import requests
 
 from nixapi_web import NixPlay
 from nixapi_mobile import NixPlayMobile
 from colorama import Fore, Back, Style, init
+
 try:
     init()
 except:
@@ -70,7 +72,10 @@ def update_nixplay_playlist_from_flickr_album(np, np_playlist_name, flickr_album
 
   if np_last_updated < flickr_last_updated or force: 
 
-    print('Updating!')
+    if force:
+      print('Forced update!')
+    
+    print(f'Updating: flickr[{flickr_album_name}] -> nixplay[{np_playlist_name}]')
 
     # delete all but 1 image from the nixplay playlist
     if np_picture_count > 1:
@@ -83,13 +88,15 @@ def update_nixplay_playlist_from_flickr_album(np, np_playlist_name, flickr_album
       items = format_flickr_photos_for_nixplay(photos)
 
       r = np.addPlayListPhotos(playlist['id'], items)
-      print(f'Posted {len(items["items"])} photos: {r.status_code}')
+      code=requests.status_codes._codes[r.status_code][0]
+      print(f'Posted {len(items["items"])} photos ({code})')
 
     # delete the remaining image
     delete_playlist_photo_range(np, playlist['id'], 0, np_picture_count)
 
-    print('done')
-
+    print('Done')
+  else:
+    print('Nothing to do')
 
 def status(np):
   frames = np.getFrames()
@@ -160,7 +167,7 @@ if __name__ == "__main__":
   parser.add_argument('--nixplay-list', dest = 'playlist', default='My Playlist')
   parser.add_argument('--flickr-album', dest = 'album', default='Favs')
   parser.add_argument('--poll', default = 0)
-  parser.add_argument('--force', default=True)
+  parser.add_argument('--force', action='store_true', default=False)
   parser.add_argument('--status', action='store_true', default=False)
   parser.add_argument('--start', action='store_true', default=False)
 
