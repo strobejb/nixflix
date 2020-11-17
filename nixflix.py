@@ -79,7 +79,7 @@ def update_nixplay_playlist_from_flickr_album(np, np_playlist_name, flickr_album
 
     # delete all but 1 image from the nixplay playlist
     if np_picture_count > 1:
-      delete_playlist_photo_range(np, playlist['id'], 0, np_picture_count - 1)
+      delete_playlist_photo_range(np, playlist['id'], 1, np_picture_count - 1)
       np_picture_count = 1
 
     # process photos 1 page at a time
