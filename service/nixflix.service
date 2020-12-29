@@ -8,4 +8,4 @@ ExecStart=/usr/bin/python3 nixflix.py --poll 900
 Restart=always
 
 [Install]
-WantedBy=multi-user.targetps
+WantedBy=multi-user.target
